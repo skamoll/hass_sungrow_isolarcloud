@@ -121,6 +121,7 @@ async def test_ha_setup_devices_entities_and_unload(tmp_path: Path) -> None:
         plant_dev = dev_reg.async_get_device(identifiers={(DOMAIN, "plant_1234567")})
         child_dev = dev_reg.async_get_device(identifiers={(DOMAIN, "device_1234567_14_1_1")})
         assert plant_dev is not None
+        assert plant_dev.name == "PV 1234567"
         assert child_dev is not None
         assert child_dev.via_device_id == plant_dev.id
 
@@ -129,31 +130,31 @@ async def test_ha_setup_devices_entities_and_unload(tmp_path: Path) -> None:
         assert len(entities) == 26
         assert not any(e.entity_id.endswith("_2") for e in entities)
 
-        export_state = hass.states.get("sensor.pv_casa_grid_export_power")
+        export_state = hass.states.get("sensor.pv_1234567_grid_export_power")
         assert export_state is not None
         assert export_state.state == "1.35"
 
-        status_state = hass.states.get("sensor.pv_casa_plant_status")
+        status_state = hass.states.get("sensor.pv_1234567_plant_status")
         assert status_state is not None
         assert status_state.state == "Normal"
 
-        refresh_btn = hass.states.get("button.pv_casa_refresh_data")
+        refresh_btn = hass.states.get("button.pv_1234567_refresh_data")
         assert refresh_btn is not None
 
-        last_update_state = hass.states.get("sensor.pv_casa_last_update")
+        last_update_state = hass.states.get("sensor.pv_1234567_last_update")
         assert last_update_state is not None
         assert last_update_state.state not in ("unknown", "unavailable")
 
-        pv_state = hass.states.get("sensor.pv_casa_pv_power")
+        pv_state = hass.states.get("sensor.pv_1234567_pv_power")
         assert pv_state is not None
         assert pv_state.state == "2.45"
         assert pv_state.attributes["unit_of_measurement"] == "kW"
 
-        soc_state = hass.states.get("sensor.pv_casa_battery_soc")
+        soc_state = hass.states.get("sensor.pv_1234567_battery_soc")
         assert soc_state is not None
         assert soc_state.state == "88.0"
 
-        online_state = hass.states.get("binary_sensor.pv_casa_online")
+        online_state = hass.states.get("binary_sensor.pv_1234567_online")
         assert online_state is not None
         assert online_state.state == "on"
 
@@ -173,7 +174,7 @@ async def test_ha_setup_devices_entities_and_unload(tmp_path: Path) -> None:
             await hass.services.async_call(
                 "button",
                 "press",
-                {"entity_id": "button.pv_casa_refresh_data"},
+                {"entity_id": "button.pv_1234567_refresh_data"},
                 blocking=True,
             )
 

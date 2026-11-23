@@ -12,7 +12,7 @@ A lightweight, native Home Assistant custom integration (`hass_sungrow_isolarclo
 
 - **Full Ecosystem Support:** Works across Sungrow plant types and hardware by combining curated plant-level flow/energy metrics with dynamic per-device telemetry discovery (`/v1/devService/getDevicePoints`), conditional EV charger discovery, and plant battery summaries.
 - **Native UI Setup & Options (`ConfigFlow` / `OptionsFlow` / `Reauth`):** Configure credentials, regional gateway (`auto` or `eu`, `com`, `au`, `hk`, `cn`, `in`), and polling interval (`30s`–`600s`, default `120s`) directly in Home Assistant.
-- **Stable English `entity_id`s + Localized UI:** All plant devices use a `PV <plant>` prefix (`sensor.pv_<plant>_*`) and Home Assistant derives deterministic English `entity_id`s from `translations/en.json`, while displaying localized names (`en` / `es`) in the UI.
+- **Stable English `entity_id`s + Localized UI:** All plant devices use a `PV <ps_id>` prefix (`sensor.pv_<ps_id>_*`) and Home Assistant derives deterministic English `entity_id`s from `translations/en.json`, while displaying localized names (`en` / `es`) in the UI.
 - **Energy Dashboard & Flow Card Ready:** Canonical `kW` / `kWh` units, `TOTAL_INCREASING` energy counters, and split directional power sensors (`grid_import_power`, `grid_export_power`, `battery_charge_power`, `battery_discharge_power`).
 - **Clean Entity Categorization:** Technical device telemetry (`WLAN signal`, `Meter type`, `Insulation resistance`, `BMS` limits, `Operating status`, firmware/fault/contactor points) is automatically placed under `EntityCategory.DIAGNOSTIC`.
 - **Zero-Overhead Fault Details:** Active fault details (`/v1/faultService/queryFaultList`) are queried **only** when a plant or device reports an active fault, exposing `fault_count` and `faults` as attributes on `binary_sensor.*_fault`.
@@ -47,7 +47,7 @@ A lightweight, native Home Assistant custom integration (`hass_sungrow_isolarclo
 
 ## Entities Created
 
-### Plant Device (`PV <Plant Name>`)
+### Plant Device (`PV <ps_id>`)
 
 | Entity / Key | Device Class / State Class | Unit | Notes |
 |---|---|---|---|

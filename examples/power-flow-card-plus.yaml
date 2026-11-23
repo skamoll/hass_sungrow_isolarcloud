@@ -1,5 +1,5 @@
 # Preconfigured Power Flow Card Plus example for Sungrow iSolarCloud
-# Replace `pv_my_plant` with your actual plant prefix (e.g. `pv_bestard_andres`).
+# Replace `pv_my_plant` with your actual plant prefix (e.g. `pv_1234567`).
 # Requires: https://github.com/flixlix/power-flow-card-plus (available in HACS)
 
 type: custom:power-flow-card-plus
