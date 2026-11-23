@@ -56,7 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
 
     device_reg = dr.async_get(hass)
-    for ps_id in (coordinator.data or {}):
+    for ps_id in coordinator.data or {}:
         plant_dev = device_reg.async_get_or_create(
             config_entry_id=entry.entry_id,
             identifiers={(DOMAIN, f"plant_{ps_id}")},
