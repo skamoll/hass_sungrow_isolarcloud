@@ -41,7 +41,24 @@ A lightweight, native Home Assistant custom integration (`hass_sungrow_isolarclo
 1. Go to **Settings → Devices & Services → Add Integration**.
 2. Search for **Sungrow iSolarCloud**.
 3. Choose your regional gateway (**Auto** is recommended; it probes `eu`, `com`, `au`, `hk`, `cn`, `in` in order) and enter your iSolarCloud email and password.
-4. Optional: Click **Configure** on the integration entry at any time to adjust the polling interval (`30`–`600` seconds).
+4. Optional: Click **Configure** on the integration entry at any time to adjust:
+   - **Polling interval:** `30`–`600` seconds (default `300` s / 5 minutes).
+   - **Offline notifications:** Enable/disable alerts when a plant stays offline (`offline_notify_enabled`, default `true`), configurable offline threshold (`1`–`1440` minutes, default `15`), and an optional `notify.*` service (e.g., `notify.mobile_app_phone`) in addition to Home Assistant's built-in persistent notification.
+
+---
+
+## Troubleshooting & Debug Logging
+
+- **Debug Logging:** Enable **Debug logging** directly from **Settings → Devices & Services → Sungrow iSolarCloud**, or add to `configuration.yaml`:
+  ```yaml
+  logger:
+    default: info
+    logs:
+      custom_components.hass_sungrow_isolarcloud: debug
+      py_sungrow_isolarcloud: debug
+  ```
+- **Automatic Error Recovery & Backoff:** Transient API/connection errors trigger a progressive retry ladder (`30s → 90s → 180s → 300s`, floored at your configured polling interval) and automatically restore your normal schedule upon recovery. Authentication failures trigger Home Assistant's native **Reconfigure / Reauthenticate** prompt.
+- **Redacted Diagnostics:** Download safe diagnostics from **Settings → Devices & Services → Sungrow iSolarCloud → ⋮ → Download diagnostics** (credentials, tokens, user IDs, and serial numbers are redacted).
 
 ---
 
@@ -56,7 +73,7 @@ A lightweight, native Home Assistant custom integration (`hass_sungrow_isolarclo
 | `grid_power` | `power` / `measurement` | `kW` | Signed net grid exchange (`+` import, `-` export) |
 | `grid_import_power` | `power` / `measurement` | `kW` | Non-negative grid import power |
 | `grid_export_power` | `power` / `measurement` | `kW` | Non-negative grid export power |
-| `battery_power` | `power` / `measurement` | `kW` | Signed net battery power (`+` charge, `-` discharge) |
+| `battery_power` | `power` / `measurement` | `kW` | Signed net battery power (`-` charge, `+` discharge) |
 | `battery_charge_power` | `power` / `measurement` | `kW` | Non-negative battery charging power |
 | `battery_discharge_power` | `power` / `measurement` | `kW` | Non-negative battery discharging power |
 | `battery_soc` | `battery` / `measurement` | `%` | Plant battery state of charge |
@@ -93,12 +110,12 @@ Every device attached to the plant is linked via `via_device_id` (with `via_devi
 
 Go to **Settings → Dashboards → Energy** and map:
 
-- **Solar production:** `sensor.pv_<plant>_daily_pv_energy` (or `total_pv_energy`)
-- **Grid consumption:** `sensor.pv_<plant>_daily_grid_import`
-- **Return to grid:** `sensor.pv_<plant>_daily_grid_export`
+- **Solar production:** `sensor.pv_<ps_id>_daily_pv_energy` (or `total_pv_energy`)
+- **Grid consumption:** `sensor.pv_<ps_id>_daily_grid_import`
+- **Return to grid:** `sensor.pv_<ps_id>_daily_grid_export`
 - **Battery systems:**
-  - Energy going into the battery: `sensor.pv_<plant>_daily_battery_charge`
-  - Energy coming out of the battery: `sensor.pv_<plant>_daily_battery_discharge`
+  - Energy going into the battery: `sensor.pv_<ps_id>_daily_battery_charge`
+  - Energy coming out of the battery: `sensor.pv_<ps_id>_daily_battery_discharge`
 
 ---
 
