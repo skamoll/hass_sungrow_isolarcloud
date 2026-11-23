@@ -27,6 +27,7 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+RETRY_BACKOFF_SECONDS = (30, 90, 180, 300)
 
 
 class ISolarCloudCoordinator(DataUpdateCoordinator[dict[str, PlantData]]):
@@ -50,6 +51,7 @@ class ISolarCloudCoordinator(DataUpdateCoordinator[dict[str, PlantData]]):
         self.client = client
         self.last_sync_utc: datetime | None = None
         self.plant_device_ids: dict[str, str] = {}
+        self._base_interval = timedelta(seconds=scan_interval_seconds)
         self.offline_notify_enabled = offline_notify_enabled
         self.offline_threshold = timedelta(minutes=max(1, offline_threshold_minutes))
         self.notify_service = notify_service.strip()
@@ -57,6 +59,11 @@ class ISolarCloudCoordinator(DataUpdateCoordinator[dict[str, PlantData]]):
         self.last_error: str | None = None
         self._offline_since: dict[str, datetime] = {}
         self._notified_offline: set[str] = set()
+
+    def _next_retry_interval(self) -> timedelta:
+        """Return progressive backoff interval capped at 300s (or base interval if larger)."""
+        idx = min(max(self.consecutive_errors - 1, 0), len(RETRY_BACKOFF_SECONDS) - 1)
+        return max(self._base_interval, timedelta(seconds=RETRY_BACKOFF_SECONDS[idx]))
 
     async def _async_update_data(self) -> dict[str, PlantData]:
         start = time.monotonic()
@@ -80,28 +87,35 @@ class ISolarCloudCoordinator(DataUpdateCoordinator[dict[str, PlantData]]):
         except (ISolarCloudConnectionError, ISolarCloudApiError, ISolarCloudError) as err:
             self.consecutive_errors += 1
             self.last_error = f"{type(err).__name__}: {err}"
+            self.update_interval = self._next_retry_interval()
             _LOGGER.debug(
-                "iSolarCloud poll failed (attempt #%d, elapsed=%.2fs): %s",
+                "iSolarCloud poll failed (attempt #%d, elapsed=%.2fs, next_retry=%ss): %s",
                 self.consecutive_errors,
                 time.monotonic() - start,
+                int(self.update_interval.total_seconds()),
                 self.last_error,
             )
             raise UpdateFailed(f"Error communicating with iSolarCloud: {err}") from err
         except Exception as err:
             self.consecutive_errors += 1
             self.last_error = f"{type(err).__name__}: {err}"
+            self.update_interval = self._next_retry_interval()
             _LOGGER.exception(
-                "Unexpected error polling iSolarCloud (attempt #%d, elapsed=%.2fs)",
+                "Unexpected error polling iSolarCloud (attempt #%d, elapsed=%.2fs, next_retry=%ss)",
                 self.consecutive_errors,
                 time.monotonic() - start,
+                int(self.update_interval.total_seconds()),
             )
             raise UpdateFailed(f"Unexpected iSolarCloud error: {err}") from err
 
         elapsed = time.monotonic() - start
         if self.consecutive_errors > 0:
+            self.update_interval = self._base_interval
             _LOGGER.info(
-                "iSolarCloud connection recovered after %d failed poll(s) (elapsed=%.2fs)",
+                "iSolarCloud connection recovered after %d failed poll(s); "
+                "resuming %ss schedule (elapsed=%.2fs)",
                 self.consecutive_errors,
+                int(self._base_interval.total_seconds()),
                 elapsed,
             )
             self.consecutive_errors = 0

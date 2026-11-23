@@ -11,7 +11,7 @@ A lightweight, native Home Assistant custom integration (`hass_sungrow_isolarclo
 ## Key Features
 
 - **Full Ecosystem Support:** Works across Sungrow plant types and hardware by combining curated plant-level flow/energy metrics with dynamic per-device telemetry discovery (`/v1/devService/getDevicePoints`), conditional EV charger discovery, and plant battery summaries.
-- **Native UI Setup & Options (`ConfigFlow` / `OptionsFlow` / `Reauth`):** Configure credentials, regional gateway (`auto` or `eu`, `com`, `au`, `hk`, `cn`, `in`), and polling interval (`30s`–`600s`, default `120s`) directly in Home Assistant.
+- **Native UI Setup & Options (`ConfigFlow` / `OptionsFlow` / `Reauth`):** Configure credentials, regional gateway (`auto` or `eu`, `com`, `au`, `hk`, `cn`, `in`), and polling interval (`30s`–`600s`, default `300s` / 5 min) directly in Home Assistant.
 - **Stable English `entity_id`s + Localized UI:** All plant devices use a `PV <ps_id>` prefix (`sensor.pv_<ps_id>_*`) and Home Assistant derives deterministic English `entity_id`s from `translations/en.json`, while displaying localized names (`en` / `es`) in the UI.
 - **Energy Dashboard & Flow Card Ready:** Canonical `kW` / `kWh` units, `TOTAL_INCREASING` energy counters, and split directional power sensors (`grid_import_power`, `grid_export_power`, `battery_charge_power`, `battery_discharge_power`).
 - **Clean Entity Categorization:** Technical device telemetry (`WLAN signal`, `Meter type`, `Insulation resistance`, `BMS` limits, `Operating status`, firmware/fault/contactor points) is automatically placed under `EntityCategory.DIAGNOSTIC`.

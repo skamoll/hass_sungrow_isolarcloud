@@ -261,3 +261,62 @@ async def test_offline_notification_and_recovery(tmp_path: Path) -> None:
         assert hass.states.get(f"persistent_notification.{DOMAIN}_offline_1234567") is None
     finally:
         await hass.async_stop()
+
+
+@pytest.mark.asyncio
+async def test_progressive_backoff_and_recovery(tmp_path: Path) -> None:
+    """Verify progressive retry backoff up to 300s on errors and reset on recovery."""
+    from py_sungrow_isolarcloud import ISolarCloudConnectionError
+
+    (tmp_path / "custom_components").symlink_to(
+        Path(__file__).resolve().parent.parent / "custom_components"
+    )
+    hass = HomeAssistant(str(tmp_path))
+    loader.async_setup(hass)
+    await bootstrap.async_from_config_dict({}, hass)
+    await hass.async_start()
+    try:
+        entry = ConfigEntry(
+            version=1,
+            minor_version=1,
+            domain=DOMAIN,
+            title="iSolarCloud (test@example.com)",
+            data={
+                CONF_USERNAME: "test@example.com",
+                CONF_PASSWORD: "secret",
+                CONF_GATEWAY: "eu",
+            },
+            options={CONF_SCAN_INTERVAL: 30},
+            source="user",
+            unique_id="999:test@example.com",
+            discovery_keys={},
+            subentries_data=None,
+        )
+        with patch(
+            "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
+            new=AsyncMock(return_value=_sample_plant_data()),
+        ):
+            await hass.config_entries.async_add(entry)
+            await hass.async_block_till_done()
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator.update_interval.total_seconds() == 30
+
+        expected_delays = [30, 90, 180, 300, 300]
+        with patch(
+            "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
+            new=AsyncMock(side_effect=ISolarCloudConnectionError("timeout")),
+        ):
+            for expected in expected_delays:
+                await coordinator.async_refresh()
+                assert coordinator.update_interval.total_seconds() == expected
+
+        with patch(
+            "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
+            new=AsyncMock(return_value=_sample_plant_data()),
+        ):
+            await coordinator.async_refresh()
+            assert coordinator.consecutive_errors == 0
+            assert coordinator.update_interval.total_seconds() == 30
+    finally:
+        await hass.async_stop()
