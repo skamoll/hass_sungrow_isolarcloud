@@ -12,7 +12,7 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/skamoll/hass_sungrow_isolarcloud/issues",
   "requirements": [
-    "py-sungrow-isolarcloud==0.1.0"
+    "py-sungrow-isolarcloud==0.1.1"
   ],
   "version": "0.1.2"
 }
