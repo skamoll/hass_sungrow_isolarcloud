@@ -1,12 +1,18 @@
 {
   "domain": "hass_sungrow_isolarcloud",
   "name": "Sungrow iSolarCloud",
-  "categories": ["energy"],
-  "codeowners": ["@skamoll"],
+  "categories": [
+    "energy"
+  ],
+  "codeowners": [
+    "@skamoll"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/skamoll/hass_sungrow_isolarcloud",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/skamoll/hass_sungrow_isolarcloud/issues",
-  "requirements": ["py-sungrow-isolarcloud==0.1.0"],
-  "version": "0.1.0"
+  "requirements": [
+    "py-sungrow-isolarcloud==0.1.0"
+  ],
+  "version": "0.1.1"
 }
