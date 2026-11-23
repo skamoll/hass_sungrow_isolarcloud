@@ -1,6 +1,7 @@
 {
   "domain": "hass_sungrow_isolarcloud",
   "name": "Sungrow iSolarCloud",
+  "categories": ["energy"],
   "codeowners": ["@skamoll"],
   "config_flow": true,
   "documentation": "https://github.com/skamoll/hass_sungrow_isolarcloud",
