@@ -17,6 +17,15 @@
         "data": {
           "password": "Password"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Sungrow iSolarCloud",
+        "description": "Update your regional gateway or account credentials without losing entity history. Leave password blank to keep the current one.",
+        "data": {
+          "gateway": "Regional gateway",
+          "username": "Email / Account",
+          "password": "New password (optional)"
+        }
       }
     },
     "error": {
@@ -26,7 +35,23 @@
     },
     "abort": {
       "already_configured": "Account is already configured",
-      "reauth_successful": "Reauthentication successful"
+      "reauth_successful": "Reauthentication successful",
+      "reconfigure_successful": "Reconfiguration successful",
+      "unique_id_mismatch": "The account does not match the existing configuration entry"
+    }
+  },
+  "issues": {
+    "connection_outage": {
+      "title": "iSolarCloud connection outage",
+      "description": "Sungrow iSolarCloud failed {error_count} consecutive poll(s) and is retrying with progressive backoff. Last error: {last_error}"
+    },
+    "rate_limited": {
+      "title": "iSolarCloud API rate limit reached",
+      "description": "iSolarCloud rejected requests due to rate limiting (current polling interval: {interval}s). Consider increasing the polling interval in the integration options."
+    },
+    "plant_offline": {
+      "title": "Solar plant PV {ps_id} is offline",
+      "description": "Plant PV {ps_id} has been offline in iSolarCloud for {minutes} minute(s). This issue will clear automatically once the plant comes back online."
     }
   },
   "options": {

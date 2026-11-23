@@ -197,6 +197,86 @@ class ISolarCloudConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_reconfigure(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle reconfiguration of gateway or credentials in place."""
+        errors: dict[str, str] = {}
+        reconfigure_entry = self._get_reconfigure_entry()
+
+        if user_input is not None:
+            username = user_input[CONF_USERNAME].strip()
+            raw_password = user_input.get(CONF_PASSWORD) or ""
+            password = raw_password if raw_password else reconfigure_entry.data[CONF_PASSWORD]
+            gateway = user_input[CONF_GATEWAY]
+
+            _LOGGER.debug(
+                "Reconfigure login attempt for entry %s (gateway=%s)",
+                reconfigure_entry.entry_id,
+                gateway,
+            )
+            session = async_get_clientsession(self.hass)
+            client = ISolarCloudClient(
+                session=session,
+                username=username,
+                password=password,
+                gateway=gateway,
+            )
+            try:
+                auth = await client.async_login()
+            except ISolarCloudAuthError as err:
+                _LOGGER.warning("Reconfigure auth failed (gateway=%s): %s", gateway, err)
+                errors["base"] = "invalid_auth"
+            except ISolarCloudConnectionError as err:
+                _LOGGER.warning("Reconfigure connection failed (gateway=%s): %s", gateway, err)
+                errors["base"] = "cannot_connect"
+            except ISolarCloudError as err:
+                _LOGGER.error("Reconfigure iSolarCloud error (gateway=%s): %s", gateway, err)
+                errors["base"] = "unknown"
+            except Exception:
+                _LOGGER.exception("Unexpected error during reconfigure (gateway=%s)", gateway)
+                errors["base"] = "unknown"
+            else:
+                await self.async_set_unique_id(f"{auth.user_id}:{username.lower()}")
+                self._abort_if_unique_id_mismatch()
+                return self.async_update_reload_and_abort(
+                    reconfigure_entry,
+                    title=f"iSolarCloud ({username})",
+                    data_updates={
+                        CONF_GATEWAY: gateway,
+                        CONF_USERNAME: username,
+                        CONF_PASSWORD: password,
+                    },
+                )
+
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_GATEWAY,
+                    default=reconfigure_entry.data.get(CONF_GATEWAY, GATEWAY_AUTO),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=GATEWAY_OPTIONS,
+                        mode=SelectSelectorMode.DROPDOWN,
+                        translation_key="gateway",
+                    )
+                ),
+                vol.Required(
+                    CONF_USERNAME,
+                    default=reconfigure_entry.data.get(CONF_USERNAME, ""),
+                ): str,
+                vol.Optional(CONF_PASSWORD, default=""): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                ),
+            }
+        )
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=schema,
+            errors=errors,
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:

@@ -90,6 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         offline_notify_enabled=offline_notify_enabled,
         offline_threshold_minutes=offline_threshold_minutes,
         notify_service=notify_service,
+        entry_id=entry.entry_id,
     )
     await coordinator.async_config_entry_first_refresh()
 

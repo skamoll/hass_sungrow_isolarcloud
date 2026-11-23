@@ -17,6 +17,15 @@
         "data": {
           "password": "Contraseña"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigurar Sungrow iSolarCloud",
+        "description": "Actualiza el servidor regional o tus credenciales sin perder el historial de entidades. Deja la contraseña vacía para mantener la actual.",
+        "data": {
+          "gateway": "Servidor regional",
+          "username": "Correo / Usuario",
+          "password": "Nueva contraseña (opcional)"
+        }
       }
     },
     "error": {
@@ -26,7 +35,23 @@
     },
     "abort": {
       "already_configured": "Esta cuenta ya está configurada",
-      "reauth_successful": "Reautenticación completada"
+      "reauth_successful": "Reautenticación completada",
+      "reconfigure_successful": "Reconfiguración completada",
+      "unique_id_mismatch": "La cuenta introducida no coincide con la configuración existente"
+    }
+  },
+  "issues": {
+    "connection_outage": {
+      "title": "Corte de conexión con iSolarCloud",
+      "description": "Sungrow iSolarCloud ha fallado {error_count} ciclo(s) consecutivo(s) y está reintentando con backoff progresivo. Último error: {last_error}"
+    },
+    "rate_limited": {
+      "title": "Límite de peticiones en iSolarCloud alcanzado",
+      "description": "iSolarCloud está rechazando peticiones por frecuencia excesiva (intervalo actual: {interval}s). Aumenta el intervalo de actualización en las opciones de la integración."
+    },
+    "plant_offline": {
+      "title": "La planta solar PV {ps_id} está desconectada",
+      "description": "La planta PV {ps_id} lleva {minutes} minuto(s) desconectada en iSolarCloud. Este aviso desaparecerá automáticamente cuando vuelva a estar en línea."
     }
   },
   "options": {

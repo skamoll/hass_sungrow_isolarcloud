@@ -57,7 +57,8 @@ A lightweight, native Home Assistant custom integration (`hass_sungrow_isolarclo
       custom_components.hass_sungrow_isolarcloud: debug
       py_sungrow_isolarcloud: debug
   ```
-- **Automatic Error Recovery & Backoff:** Transient API/connection errors trigger a progressive retry ladder (`30s → 90s → 180s → 300s`, floored at your configured polling interval) and automatically restore your normal schedule upon recovery. Authentication failures trigger Home Assistant's native **Reconfigure / Reauthenticate** prompt.
+- **Automatic Error Recovery, Grace Cache & Backoff:** Tolerates up to 2 brief transient API/network hiccups using recent cached data (bounded by a 15-minute staleness guard) so entities don't flap to `unavailable`, climbs a progressive retry ladder (`30s → 90s → 180s → 300s`, floored at your polling interval), and restores your normal schedule automatically on recovery.
+- **Native Home Assistant Repairs & Reconfigure:** Sustained outages, API rate-limiting, and prolonged plant-offline states create actionable issues under **Settings → System → Repairs** and auto-clear once resolved. Use **⋮ → Reconfigure** to switch regional gateway or credentials in place without losing entity history.
 - **Redacted Diagnostics:** Download safe diagnostics from **Settings → Devices & Services → Sungrow iSolarCloud → ⋮ → Download diagnostics** (credentials, tokens, user IDs, and serial numbers are redacted).
 
 ---

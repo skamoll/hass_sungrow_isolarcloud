@@ -265,7 +265,8 @@ async def test_offline_notification_and_recovery(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_progressive_backoff_and_recovery(tmp_path: Path) -> None:
-    """Verify progressive retry backoff up to 300s on errors and reset on recovery."""
+    """Verify grace cache, progressive retry backoff, Repairs issue, and recovery."""
+    from homeassistant.helpers import issue_registry as ir
     from py_sungrow_isolarcloud import ISolarCloudConnectionError
 
     (tmp_path / "custom_components").symlink_to(
@@ -307,9 +308,19 @@ async def test_progressive_backoff_and_recovery(tmp_path: Path) -> None:
             "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
             new=AsyncMock(side_effect=ISolarCloudConnectionError("timeout")),
         ):
-            for expected in expected_delays:
+            for idx, expected in enumerate(expected_delays, start=1):
                 await coordinator.async_refresh()
                 assert coordinator.update_interval.total_seconds() == expected
+                if idx <= 2:
+                    assert coordinator.last_update_success is True
+                    assert hass.states.get("sensor.pv_1234567_pv_power").state == "2.45"
+                else:
+                    assert coordinator.last_update_success is False
+                    issue_reg = ir.async_get(hass)
+                    assert (
+                        issue_reg.async_get_issue(DOMAIN, f"connection_outage_{entry.entry_id}")
+                        is not None
+                    )
 
         with patch(
             "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
@@ -318,5 +329,9 @@ async def test_progressive_backoff_and_recovery(tmp_path: Path) -> None:
             await coordinator.async_refresh()
             assert coordinator.consecutive_errors == 0
             assert coordinator.update_interval.total_seconds() == 30
+            assert (
+                ir.async_get(hass).async_get_issue(DOMAIN, f"connection_outage_{entry.entry_id}")
+                is None
+            )
     finally:
         await hass.async_stop()
