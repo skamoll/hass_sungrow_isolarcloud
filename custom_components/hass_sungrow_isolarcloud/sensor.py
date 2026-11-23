@@ -398,6 +398,7 @@ class ISolarCloudPlantSensor(ISolarCloudPlantEntity, SensorEntity):
 
     @property
     def native_value(self) -> Any:
+        """Return the current value of the plant sensor."""
         plant = self.plant_data
         if plant is None:
             return None
@@ -408,6 +409,7 @@ class ISolarCloudPlantSensor(ISolarCloudPlantEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return weather forecast attributes for the plant temperature sensor."""
         plant = self.plant_data
         if plant is None or self.entity_description.key != "plant_temperature" or not plant.weather:
             return None
@@ -420,6 +422,7 @@ class ISolarCloudPlantSensor(ISolarCloudPlantEntity, SensorEntity):
 
     @property
     def native_unit_of_measurement(self) -> str | None:
+        """Return the dynamic or fallback unit of measurement."""
         plant = self.plant_data
         if plant is not None and self.entity_description.unit_fn is not None:
             return self.entity_description.unit_fn(plant)
@@ -443,6 +446,7 @@ class ISolarCloudDeviceSensor(ISolarCloudDeviceEntity, SensorEntity):
 
     @property
     def native_value(self) -> Any:
+        """Return the current value of the child-device sensor."""
         dev = self.device_summary
         if dev is None:
             return None
@@ -553,6 +557,7 @@ class ISolarCloudDevicePointSensor(ISolarCloudDeviceEntity, SensorEntity):
 
     @property
     def name(self) -> str | None:
+        """Return the localized telemetry point name."""
         pt = self._current_point()
         if pt is not None:
             return pt.name
@@ -560,6 +565,7 @@ class ISolarCloudDevicePointSensor(ISolarCloudDeviceEntity, SensorEntity):
 
     @property
     def native_value(self) -> float | str | None:
+        """Return the current telemetry point value."""
         pt = self._current_point()
         if pt is None:
             return None

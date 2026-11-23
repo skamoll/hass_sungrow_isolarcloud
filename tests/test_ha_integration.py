@@ -35,9 +35,9 @@ from custom_components.hass_sungrow_isolarcloud.const import (
 
 def _sample_plant_data() -> dict[str, PlantData]:
     return {
-        "6116893": PlantData(
+        "1234567": PlantData(
             summary=PlantSummary(
-                ps_id="6116893",
+                ps_id="1234567",
                 ps_name="Casa",
                 ps_status=1,
                 design_capacity_kwp=6.0,
@@ -54,8 +54,8 @@ def _sample_plant_data() -> dict[str, PlantData]:
             ),
             devices=[
                 DeviceSummary(
-                    ps_id="6116893",
-                    ps_key="6116893_14_1_1",
+                    ps_id="1234567",
+                    ps_key="1234567_14_1_1",
                     uuid="8633308",
                     device_name="Inverter SH6.0RS",
                     device_model="SH6.0RS",
@@ -118,8 +118,8 @@ async def test_ha_setup_devices_entities_and_unload(tmp_path: Path) -> None:
         devices = dr.async_entries_for_config_entry(dev_reg, entry.entry_id)
         assert len(devices) == 2
 
-        plant_dev = dev_reg.async_get_device(identifiers={(DOMAIN, "plant_6116893")})
-        child_dev = dev_reg.async_get_device(identifiers={(DOMAIN, "device_6116893_14_1_1")})
+        plant_dev = dev_reg.async_get_device(identifiers={(DOMAIN, "plant_1234567")})
+        child_dev = dev_reg.async_get_device(identifiers={(DOMAIN, "device_1234567_14_1_1")})
         assert plant_dev is not None
         assert child_dev is not None
         assert child_dev.via_device_id == plant_dev.id
@@ -164,7 +164,7 @@ async def test_ha_setup_devices_entities_and_unload(tmp_path: Path) -> None:
         diag = await async_get_config_entry_diagnostics(hass, entry)
         assert diag["entry"]["data"]["username"] == "**REDACTED**"
         assert diag["entry"]["data"]["password"] == "**REDACTED**"
-        assert diag["plants"]["6116893"]["devices"][0]["point_count"] == 1
+        assert diag["plants"]["1234567"]["devices"][0]["point_count"] == 1
 
         with patch(
             "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",

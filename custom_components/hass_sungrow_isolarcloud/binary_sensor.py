@@ -45,6 +45,7 @@ class ISolarCloudPlantOnlineBinarySensor(ISolarCloudPlantEntity, BinarySensorEnt
 
     @property
     def is_on(self) -> bool | None:
+        """Return True when the plant is online."""
         plant = self.plant_data
         if plant is None:
             return None
@@ -67,6 +68,7 @@ class ISolarCloudDeviceOnlineBinarySensor(ISolarCloudDeviceEntity, BinarySensorE
 
     @property
     def is_on(self) -> bool | None:
+        """Return True when the device is online."""
         dev = self.device_summary
         if dev is None:
             return None
@@ -84,6 +86,7 @@ class ISolarCloudPlantFaultBinarySensor(ISolarCloudPlantEntity, BinarySensorEnti
 
     @property
     def is_on(self) -> bool | None:
+        """Return True when the plant is online."""
         plant = self.plant_data
         if plant is None:
             return None
@@ -91,6 +94,7 @@ class ISolarCloudPlantFaultBinarySensor(ISolarCloudPlantEntity, BinarySensorEnti
 
     @property
     def extra_state_attributes(self) -> dict[str, object] | None:
+        """Return active plant fault details when present."""
         plant = self.plant_data
         if plant is None or not plant.active_faults:
             return None
@@ -125,6 +129,7 @@ class ISolarCloudDeviceFaultBinarySensor(ISolarCloudDeviceEntity, BinarySensorEn
 
     @property
     def is_on(self) -> bool | None:
+        """Return True when the device is online."""
         dev = self.device_summary
         if dev is None:
             return None
@@ -132,6 +137,7 @@ class ISolarCloudDeviceFaultBinarySensor(ISolarCloudDeviceEntity, BinarySensorEn
 
     @property
     def extra_state_attributes(self) -> dict[str, object] | None:
+        """Return active fault details matching this device when present."""
         plant = self.coordinator.data.get(self._ps_id) if self.coordinator.data else None
         dev = self.device_summary
         if plant is None or dev is None or not plant.active_faults:

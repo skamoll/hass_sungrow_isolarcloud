@@ -113,3 +113,13 @@ If you use [Power Flow Card Plus](https://github.com/flixlix/power-flow-card-plu
 The underlying async iSolarCloud API client lives in [`skamoll/py-sungrow-isolarcloud`](https://github.com/skamoll/py-sungrow-isolarcloud) with **zero `homeassistant` imports** (`aiohttp` + `cryptography`), consumed by this integration via `manifest.json`.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for local venv setup, `ruff` checks, and running the unit + Home Assistant Core test suite.
+
+## Contributing, Issues & Security
+
+- **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_CONDUCT.md).
+- **Reporting Bugs & Feature Requests:** Open an issue using the [GitHub Issue Templates](https://github.com/skamoll/hass_sungrow_isolarcloud/issues/new/choose) and attach redacted diagnostics (**Settings → Devices & Services → Sungrow iSolarCloud → ⋮ → Download diagnostics**) when reporting device-specific issues.
+- **Security Vulnerabilities:** Please report privately via [SECURITY.md](SECURITY.md) instead of opening a public issue.
+
+## License
+
+Licensed under the [MIT License](LICENSE).
