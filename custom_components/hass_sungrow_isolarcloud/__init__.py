@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.core import HomeAssistant
@@ -9,9 +11,21 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from py_sungrow_isolarcloud import GATEWAY_AUTO, ISolarCloudClient
 
-from .const import CONF_GATEWAY, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import (
+    CONF_GATEWAY,
+    CONF_NOTIFY_SERVICE,
+    CONF_OFFLINE_NOTIFY_ENABLED,
+    CONF_OFFLINE_THRESHOLD_MINUTES,
+    CONF_SCAN_INTERVAL,
+    DEFAULT_OFFLINE_NOTIFY_ENABLED,
+    DEFAULT_OFFLINE_THRESHOLD_MINUTES,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+)
 from .coordinator import ISolarCloudCoordinator
 from .entity import format_plant_device_name
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.BUTTON]
 
@@ -39,24 +53,48 @@ def _resolve_isolarcloud_lang(language: str | None) -> str:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Sungrow iSolarCloud from a config entry."""
+    gateway = entry.data.get(CONF_GATEWAY, GATEWAY_AUTO)
+    lang = _resolve_isolarcloud_lang(hass.config.language)
+    scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    offline_notify_enabled = entry.options.get(
+        CONF_OFFLINE_NOTIFY_ENABLED, DEFAULT_OFFLINE_NOTIFY_ENABLED
+    )
+    offline_threshold_minutes = entry.options.get(
+        CONF_OFFLINE_THRESHOLD_MINUTES, DEFAULT_OFFLINE_THRESHOLD_MINUTES
+    )
+    notify_service = entry.options.get(CONF_NOTIFY_SERVICE, "")
+
+    _LOGGER.debug(
+        "Setting up entry %s (gateway=%s, lang=%s, scan_interval=%ss, "
+        "offline_notify=%s, offline_threshold=%smin)",
+        entry.entry_id,
+        gateway,
+        lang,
+        scan_interval,
+        offline_notify_enabled,
+        offline_threshold_minutes,
+    )
+
     session = async_get_clientsession(hass)
     client = ISolarCloudClient(
         session=session,
         username=entry.data[CONF_USERNAME],
         password=entry.data[CONF_PASSWORD],
-        gateway=entry.data.get(CONF_GATEWAY, GATEWAY_AUTO),
-        lang=_resolve_isolarcloud_lang(hass.config.language),
+        gateway=gateway,
+        lang=lang,
     )
-    scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     coordinator = ISolarCloudCoordinator(
         hass=hass,
         client=client,
         scan_interval_seconds=scan_interval,
+        offline_notify_enabled=offline_notify_enabled,
+        offline_threshold_minutes=offline_threshold_minutes,
+        notify_service=notify_service,
     )
     await coordinator.async_config_entry_first_refresh()
 
     device_reg = dr.async_get(hass)
-    for ps_id in coordinator.data or {}:
+    for ps_id, plant in (coordinator.data or {}).items():
         plant_dev = device_reg.async_get_or_create(
             config_entry_id=entry.entry_id,
             identifiers={(DOMAIN, f"plant_{ps_id}")},
@@ -65,6 +103,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             name=format_plant_device_name(ps_id),
         )
         coordinator.plant_device_ids[ps_id] = plant_dev.id
+        _LOGGER.debug(
+            "Registered plant device PV %s (id=%s, child_devices=%d)",
+            ps_id,
+            plant_dev.id,
+            len(plant.devices),
+        )
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))

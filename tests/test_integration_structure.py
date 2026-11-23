@@ -41,6 +41,12 @@ def test_translations_parity() -> None:
     assert set(strings["selector"]["gateway"]["options"].keys()) == set(
         es["selector"]["gateway"]["options"].keys()
     )
+    assert set(strings["options"]["step"]["init"]["data"].keys()) == set(
+        es["options"]["step"]["init"]["data"].keys()
+    )
+    assert set(strings["config"]["step"]["reauth_confirm"]["data"].keys()) == set(
+        es["config"]["step"]["reauth_confirm"]["data"].keys()
+    )
 
 
 def test_entity_translation_keys_exist() -> None:

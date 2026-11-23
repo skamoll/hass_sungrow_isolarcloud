@@ -10,6 +10,13 @@
           "password": "Contraseña",
           "scan_interval": "Intervalo de actualización (segundos)"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reautenticar Sungrow iSolarCloud",
+        "description": "Tu sesión de iSolarCloud ha caducado o las credenciales han cambiado. Introduce tu contraseña de nuevo.",
+        "data": {
+          "password": "Contraseña"
+        }
       }
     },
     "error": {
@@ -18,7 +25,8 @@
       "unknown": "Error inesperado"
     },
     "abort": {
-      "already_configured": "Esta cuenta ya está configurada"
+      "already_configured": "Esta cuenta ya está configurada",
+      "reauth_successful": "Reautenticación completada"
     }
   },
   "options": {
@@ -26,7 +34,10 @@
       "init": {
         "title": "Opciones de Sungrow iSolarCloud",
         "data": {
-          "scan_interval": "Intervalo de actualización (segundos)"
+          "scan_interval": "Intervalo de actualización (segundos)",
+          "offline_notify_enabled": "Notificar si la planta permanece desconectada",
+          "offline_threshold_minutes": "Tiempo desconectada antes de avisar (minutos)",
+          "notify_service": "Servicio notify opcional (ej. notify.mobile_app_telefono)"
         }
       }
     }

@@ -183,3 +183,81 @@ async def test_ha_setup_devices_entities_and_unload(tmp_path: Path) -> None:
         assert entry.state is ConfigEntryState.NOT_LOADED
     finally:
         await hass.async_stop()
+
+
+@pytest.mark.asyncio
+async def test_offline_notification_and_recovery(tmp_path: Path) -> None:
+    """Verify persistent notification on offline threshold and dismissal on recovery."""
+    from datetime import timedelta
+
+    from homeassistant.util import dt as dt_util
+
+    (tmp_path / "custom_components").symlink_to(
+        Path(__file__).resolve().parent.parent / "custom_components"
+    )
+    hass = HomeAssistant(str(tmp_path))
+    loader.async_setup(hass)
+    await bootstrap.async_from_config_dict({}, hass)
+    await hass.async_start()
+    try:
+        offline_data = _sample_plant_data()
+        offline_data["1234567"].summary.ps_status = 0
+
+        entry = ConfigEntry(
+            version=1,
+            minor_version=1,
+            domain=DOMAIN,
+            title="iSolarCloud (test@example.com)",
+            data={
+                CONF_USERNAME: "test@example.com",
+                CONF_PASSWORD: "secret",
+                CONF_GATEWAY: "eu",
+            },
+            options={
+                CONF_SCAN_INTERVAL: 120,
+                "offline_notify_enabled": True,
+                "offline_threshold_minutes": 10,
+                "notify_service": "",
+            },
+            source="user",
+            unique_id="999:test@example.com",
+            discovery_keys={},
+            subentries_data=None,
+        )
+        with patch(
+            "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
+            new=AsyncMock(return_value=offline_data),
+        ):
+            await hass.config_entries.async_add(entry)
+            await hass.async_block_till_done()
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert "1234567" in coordinator._offline_since
+        assert "1234567" not in coordinator._notified_offline
+
+        # Simulate elapsed offline period past the 10-minute threshold
+        coordinator._offline_since["1234567"] = dt_util.utcnow() - timedelta(minutes=11)
+        with patch(
+            "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
+            new=AsyncMock(return_value=offline_data),
+        ):
+            await coordinator.async_refresh()
+            await hass.async_block_till_done()
+
+        assert "1234567" in coordinator._notified_offline
+        assert hass.states.get(f"persistent_notification.{DOMAIN}_offline_1234567") is not None
+
+        # Simulate recovery
+        online_data = _sample_plant_data()
+        with patch(
+            "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
+            new=AsyncMock(return_value=online_data),
+        ):
+            await coordinator.async_refresh()
+            await hass.async_block_till_done()
+
+        assert "1234567" not in coordinator._offline_since
+        assert "1234567" not in coordinator._notified_offline
+        assert hass.states.get(f"persistent_notification.{DOMAIN}_offline_1234567") is None
+    finally:
+        await hass.async_stop()
