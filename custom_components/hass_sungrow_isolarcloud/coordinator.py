@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timedelta
 
 from homeassistant.components import persistent_notification
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry as ir
@@ -46,12 +47,14 @@ class ISolarCloudCoordinator(DataUpdateCoordinator[dict[str, PlantData]]):
         offline_threshold_minutes: int = DEFAULT_OFFLINE_THRESHOLD_MINUTES,
         notify_service: str = "",
         entry_id: str = "",
+        config_entry: ConfigEntry | None = None,
     ) -> None:
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=scan_interval_seconds),
+            config_entry=config_entry,
         )
         self.client = client
         self.last_sync_utc: datetime | None = None

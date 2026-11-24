@@ -84,11 +84,7 @@ class ISolarCloudConfigFlow(ConfigFlow, domain=DOMAIN):
             try:
                 auth = await client.async_login()
                 plants = await client.async_get_ps_list()
-                _LOGGER.debug(
-                    "Config flow login succeeded (user_id=%s, plants=%d)",
-                    auth.user_id,
-                    len(plants),
-                )
+                _LOGGER.debug("Config flow login succeeded (plants=%d)", len(plants))
             except ISolarCloudAuthError as err:
                 _LOGGER.warning("Config flow auth failed (gateway=%s): %s", gateway, err)
                 errors["base"] = "invalid_auth"
@@ -131,7 +127,9 @@ class ISolarCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                     )
                 ),
                 vol.Required(CONF_USERNAME): str,
-                vol.Required(CONF_PASSWORD): str,
+                vol.Required(CONF_PASSWORD): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                ),
                 vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): NumberSelector(
                     NumberSelectorConfig(
                         min=MIN_SCAN_INTERVAL,
@@ -190,7 +188,13 @@ class ISolarCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                     data_updates={CONF_PASSWORD: password},
                 )
 
-        schema = vol.Schema({vol.Required(CONF_PASSWORD): str})
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_PASSWORD): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                )
+            }
+        )
         return self.async_show_form(
             step_id="reauth_confirm",
             data_schema=schema,

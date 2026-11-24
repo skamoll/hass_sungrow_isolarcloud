@@ -45,7 +45,7 @@ class ISolarCloudPlantOnlineBinarySensor(ISolarCloudPlantEntity, BinarySensorEnt
 
     @property
     def is_on(self) -> bool | None:
-        """Return True when the plant is online."""
+        """Return True when the plant has an active fault."""
         plant = self.plant_data
         if plant is None:
             return None
@@ -68,7 +68,7 @@ class ISolarCloudDeviceOnlineBinarySensor(ISolarCloudDeviceEntity, BinarySensorE
 
     @property
     def is_on(self) -> bool | None:
-        """Return True when the device is online."""
+        """Return True when the device has an active fault."""
         dev = self.device_summary
         if dev is None:
             return None
@@ -86,7 +86,7 @@ class ISolarCloudPlantFaultBinarySensor(ISolarCloudPlantEntity, BinarySensorEnti
 
     @property
     def is_on(self) -> bool | None:
-        """Return True when the plant is online."""
+        """Return True when the plant has an active fault."""
         plant = self.plant_data
         if plant is None:
             return None
@@ -129,7 +129,7 @@ class ISolarCloudDeviceFaultBinarySensor(ISolarCloudDeviceEntity, BinarySensorEn
 
     @property
     def is_on(self) -> bool | None:
-        """Return True when the device is online."""
+        """Return True when the device has an active fault."""
         dev = self.device_summary
         if dev is None:
             return None

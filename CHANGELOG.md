@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-11-24
+
+### Fixed
+- **Diagnostics redaction:** Redact `title` (`iSolarCloud (<username>)`), `ps_name`, `pile_sn`, `charging_pile_sn`, `serial_number`, `battery_sn`, `bms_sn`, and dynamic serial-number telemetry points in `diagnostics.py`.
+- **Config & Reauth UI:** Mask password inputs with `TextSelectorType.PASSWORD` in `async_step_user` and `async_step_reauth_confirm`, and drop `user_id` from config flow debug logs.
+- **Coordinator & Compatibility:** Pass `config_entry` to `DataUpdateCoordinator.__init__`, fix fault `binary_sensor` docstrings, and align minimum Home Assistant version to `2024.11.0`.
+
 ## [0.1.5] - 2026-11-23
 
 ### Added

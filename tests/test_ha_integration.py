@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from py_sungrow_isolarcloud.models import (
+    ChargingPileSummary,
     DevicePoint,
     DeviceSummary,
     PlantData,
@@ -118,8 +119,12 @@ async def test_ha_setup_devices_entities_and_unload(tmp_path: Path) -> None:
         devices = dr.async_entries_for_config_entry(dev_reg, entry.entry_id)
         assert len(devices) == 2
 
-        plant_dev = dev_reg.async_get_device(identifiers={(DOMAIN, "plant_1234567")})
-        child_dev = dev_reg.async_get_device(identifiers={(DOMAIN, "device_1234567_14_1_1")})
+        plant_dev = dev_reg.async_get_device_by_identifier(
+            (DOMAIN, "plant_1234567"), entry.entry_id
+        )
+        child_dev = dev_reg.async_get_device_by_identifier(
+            (DOMAIN, "device_1234567_14_1_1"), entry.entry_id
+        )
         assert plant_dev is not None
         assert plant_dev.name == "PV 1234567"
         assert child_dev is not None
@@ -163,8 +168,10 @@ async def test_ha_setup_devices_entities_and_unload(tmp_path: Path) -> None:
         )
 
         diag = await async_get_config_entry_diagnostics(hass, entry)
+        assert diag["entry"]["title"] == "**REDACTED**"
         assert diag["entry"]["data"]["username"] == "**REDACTED**"
         assert diag["entry"]["data"]["password"] == "**REDACTED**"
+        assert diag["plants"]["1234567"]["summary"]["ps_name"] == "**REDACTED**"
         assert diag["plants"]["1234567"]["devices"][0]["point_count"] == 1
 
         with patch(
@@ -235,30 +242,49 @@ async def test_offline_notification_and_recovery(tmp_path: Path) -> None:
         assert "1234567" in coordinator._offline_since
         assert "1234567" not in coordinator._notified_offline
 
+        from homeassistant.components import persistent_notification
+        from homeassistant.helpers import issue_registry as ir
+
         # Simulate elapsed offline period past the 10-minute threshold
         coordinator._offline_since["1234567"] = dt_util.utcnow() - timedelta(minutes=11)
-        with patch(
-            "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
-            new=AsyncMock(return_value=offline_data),
+        with (
+            patch(
+                "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
+                new=AsyncMock(return_value=offline_data),
+            ),
+            patch.object(
+                persistent_notification,
+                "async_create",
+                wraps=persistent_notification.async_create,
+            ) as mock_notify_create,
         ):
             await coordinator.async_refresh()
             await hass.async_block_till_done()
 
         assert "1234567" in coordinator._notified_offline
-        assert hass.states.get(f"persistent_notification.{DOMAIN}_offline_1234567") is not None
+        mock_notify_create.assert_called_once()
+        assert ir.async_get(hass).async_get_issue(DOMAIN, "plant_offline_1234567") is not None
 
         # Simulate recovery
         online_data = _sample_plant_data()
-        with patch(
-            "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
-            new=AsyncMock(return_value=online_data),
+        with (
+            patch(
+                "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
+                new=AsyncMock(return_value=online_data),
+            ),
+            patch.object(
+                persistent_notification,
+                "async_dismiss",
+                wraps=persistent_notification.async_dismiss,
+            ) as mock_notify_dismiss,
         ):
             await coordinator.async_refresh()
             await hass.async_block_till_done()
 
         assert "1234567" not in coordinator._offline_since
         assert "1234567" not in coordinator._notified_offline
-        assert hass.states.get(f"persistent_notification.{DOMAIN}_offline_1234567") is None
+        mock_notify_dismiss.assert_called_once_with(hass, f"{DOMAIN}_offline_1234567")
+        assert ir.async_get(hass).async_get_issue(DOMAIN, "plant_offline_1234567") is None
     finally:
         await hass.async_stop()
 
@@ -333,5 +359,84 @@ async def test_progressive_backoff_and_recovery(tmp_path: Path) -> None:
                 ir.async_get(hass).async_get_issue(DOMAIN, f"connection_outage_{entry.entry_id}")
                 is None
             )
+    finally:
+        await hass.async_stop()
+
+
+@pytest.mark.asyncio
+async def test_diagnostics_redacts_all_sensitive_fields(tmp_path: Path) -> None:
+    """Verify diagnostics redacts title, credentials, plant name, pile_sn, and serial points."""
+    from custom_components.hass_sungrow_isolarcloud.diagnostics import (
+        async_get_config_entry_diagnostics,
+    )
+
+    (tmp_path / "custom_components").symlink_to(
+        Path(__file__).resolve().parent.parent / "custom_components"
+    )
+    hass = HomeAssistant(str(tmp_path))
+    loader.async_setup(hass)
+    await bootstrap.async_from_config_dict({}, hass)
+    await hass.async_start()
+    try:
+        sample = _sample_plant_data()
+        sample["1234567"].devices[0].points[99999] = DevicePoint(
+            point_id=99999,
+            name="Inverter serial number",
+            value="A2400123456",
+            unit=None,
+            is_numeric=False,
+        )
+        sample["1234567"].charging_piles = [
+            ChargingPileSummary(
+                pile_sn="PILE-SN-SECRET-001",
+                pile_name="Wallbox",
+                status="1",
+                charging_power_kw=7.2,
+                charging_energy_kwh=12.4,
+            )
+        ]
+        sample["1234567"].battery_info = {"battery_sn": "BAT-SN-999", "soc": 88}
+
+        entry = ConfigEntry(
+            version=1,
+            minor_version=1,
+            domain=DOMAIN,
+            title="iSolarCloud (owner@example.com)",
+            data={
+                CONF_USERNAME: "owner@example.com",
+                CONF_PASSWORD: "super-secret-password",
+                CONF_GATEWAY: "eu",
+            },
+            options={CONF_SCAN_INTERVAL: 300},
+            source="user",
+            unique_id="999:owner@example.com",
+            discovery_keys={},
+            subentries_data=None,
+        )
+        with patch(
+            "py_sungrow_isolarcloud.client.ISolarCloudClient.async_fetch_all_plants",
+            new=AsyncMock(return_value=sample),
+        ):
+            await hass.config_entries.async_add(entry)
+            await hass.async_block_till_done()
+
+        diag = await async_get_config_entry_diagnostics(hass, entry)
+        serialized = str(diag)
+        for secret in (
+            "owner@example.com",
+            "super-secret-password",
+            "Casa",
+            "A2400123456",
+            "PILE-SN-SECRET-001",
+            "BAT-SN-999",
+        ):
+            assert secret not in serialized
+
+        assert diag["entry"]["title"] == "**REDACTED**"
+        assert diag["plants"]["1234567"]["charging_piles"][0]["pile_sn"] == "**REDACTED**"
+        assert diag["plants"]["1234567"]["battery_info"]["battery_sn"] == "**REDACTED**"
+        assert diag["plants"]["1234567"]["devices"][0]["points"]["99999"]["value"] == (
+            "**REDACTED**"
+        )
     finally:
         await hass.async_stop()

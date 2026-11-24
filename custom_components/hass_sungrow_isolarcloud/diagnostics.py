@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
-from homeassistant.components.diagnostics import async_redact_data
+from homeassistant.components.diagnostics import REDACTED, async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
@@ -16,11 +16,24 @@ from .coordinator import ISolarCloudCoordinator
 TO_REDACT = {
     CONF_USERNAME,
     CONF_PASSWORD,
+    "title",
     "token",
     "user_id",
+    "ps_name",
     "device_sn",
+    "pile_sn",
+    "charging_pile_sn",
+    "serial_number",
+    "battery_sn",
+    "bms_sn",
     "sn",
 }
+
+
+def _is_serial_point_name(name: str) -> bool:
+    """Return True when a telemetry point name represents a device serial number."""
+    lower = name.lower()
+    return "serial" in lower or "serie" in lower or lower in {"sn", "device sn"}
 
 
 async def async_get_config_entry_diagnostics(
@@ -46,7 +59,7 @@ async def async_get_config_entry_diagnostics(
                     "points": {
                         str(pid): {
                             "name": pt.name,
-                            "value": pt.value,
+                            "value": REDACTED if _is_serial_point_name(pt.name) else pt.value,
                             "unit": pt.unit,
                         }
                         for pid, pt in sorted(dev.points.items())
