@@ -1,7 +1,7 @@
 # Sungrow iSolarCloud for Home Assistant
 
 [![CI](https://github.com/skamoll/hass_sungrow_isolarcloud/actions/workflows/ci.yml/badge.svg)](https://github.com/skamoll/hass_sungrow_isolarcloud/actions/workflows/ci.yml)
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://hacs.xyz/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A lightweight, native Home Assistant custom integration (`hass_sungrow_isolarcloud`) for monitoring the full **Sungrow iSolarCloud** ecosystem — PV plants, hybrid and string inverters, batteries, smart meters, EV chargers, and communication modules — without external add-ons or an MQTT broker.
@@ -22,14 +22,22 @@ A lightweight, native Home Assistant custom integration (`hass_sungrow_isolarclo
 
 ## Installation
 
-### Option 1: HACS (Custom Repository)
+### Install from HACS
 
-1. Open **HACS** in Home Assistant → **Integrations** → **⋮** → **Custom repositories**.
+1. Open **HACS** in Home Assistant and search for **Sungrow iSolarCloud**.
+2. Select **Sungrow iSolarCloud** and click **Download**.
+3. Restart Home Assistant.
+
+### HACS fallback: Custom repository
+
+If **Sungrow iSolarCloud** does not appear in the HACS catalog, add it as a custom repository:
+
+1. Open **HACS** in Home Assistant → **⋮** → **Custom repositories**.
 2. Add `https://github.com/skamoll/hass_sungrow_isolarcloud` with category **Integration**.
-3. Search for **Sungrow iSolarCloud** and install it.
+3. Search for **Sungrow iSolarCloud** and click **Download**.
 4. Restart Home Assistant.
 
-### Option 2: Manual Installation
+### Manual Installation
 
 1. Copy `custom_components/hass_sungrow_isolarcloud` into `<config>/custom_components/hass_sungrow_isolarcloud`.
 2. Restart Home Assistant.
